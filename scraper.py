@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# python3 -u scraper.py | tee scraped.kt
+#
 import requests
 from lxml import html, etree
 import re
@@ -142,6 +145,12 @@ def versions_count(chord_name, variation) -> int:
 	content = etree.tostring(tree, pretty_print=True).decode()
 	return content.count('&amp;v=')
 
+def lastNonEmpty(row) -> int:
+	for i in range(len(row) - 1,-1,-1):
+		if row[i] != 'empty':
+			return i, row[i]
+	return -1, None
+
 def scrape_chord_code(chord_name, variation, version = 1) -> str:
 	url = build_url(chord_name, variation, version)
 	response = requests.get(url)
@@ -166,12 +175,6 @@ def scrape_chord_code(chord_name, variation, version = 1) -> str:
 			cfrets.append(value)
 		frets.append(cfrets)
 
-	def lastNonEmpty(row) -> int:
-		for i in range(len(row) - 1,-1,-1):
-			if row[i] != 'empty':
-				return i, row[i]
-		return -1, None
-
 	subcodes = []
 	for row in frets:
 		fn, val = lastNonEmpty(row)
@@ -182,19 +185,34 @@ def scrape_chord_code(chord_name, variation, version = 1) -> str:
 			subcodes.append(str(fn))
 
 	code = ','.join(subcodes[::-1])
+	return code
 
-	print(f'{chord_name}{variation}\t,{code}')
+	print(f'  "{chord_name}{variation}" to "{code}",')
 
+
+def scrape_chord(chord_name, variation):
+	versionCodes = []
+	versionCount = versions_count(chord_name, variation)
+	if versionCount:
+		for version in range(versionCount):
+			code = scrape_chord_code(chord_name, variation, version)
+			versionCodes.append(f'"{code}"')
+	else:
+		code = scrape_chord_code(chord_name, variation, 0)
+		versionCodes.append(f'"{code}"')
+
+	codes = ", ".join(versionCodes)
+
+	if not variation:
+		variation = ''
+
+	print(f'  "{chord_name}{variation}" to listOf({codes}),')
 
 # normal chords + variations
-for chord in normal_chord_types:
+for chord_name in normal_chord_types:
 	for variation in chord_variation_types:
-		versions = versions_count(chord, variation)
-		for version in versions:
-			scrape_chord_code(chord, variation, version)
+		scrape_chord(chord_name, variation)
 
 # split chords
-for chord in split_chord_types:
-	versions = versions_count(chord, None)
-	for version in versions:
-		scrape_chord_code(chord, None, version)
+for chord_name in split_chord_types:
+	scrape_chord(chord_name, None)
