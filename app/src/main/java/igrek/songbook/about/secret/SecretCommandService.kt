@@ -21,6 +21,7 @@ import igrek.songbook.info.logger.LoggerFactory
 import igrek.songbook.persistence.LocalDbService
 import igrek.songbook.persistence.repository.SongsRepository
 import igrek.songbook.settings.preferences.PreferencesService
+import igrek.songbook.settings.preferences.sync.QuickStart2
 import igrek.songbook.system.SoftKeyboardService
 import igrek.songbook.system.locale.StringSimplifier
 import javax.inject.Inject
@@ -83,6 +84,12 @@ class SecretCommandService {
                     logger.error("error log")
                     FirebaseCrashlytics.getInstance().sendUnsentReports()
                 },
+                CommandRule("drive sync", "a") { QuickStart2.test(activity) },
+                CommandRule("drive sync create") { QuickStart2.createFile(activity) },
+                CommandRule("drive sync save") { QuickStart2.saveFile(activity) },
+                CommandRule("drive sync load") { QuickStart2.readLastFile() },
+                CommandRule("drive sync query") { QuickStart2.query(activity) },
+                CommandRule("drive sync save2", "b") { QuickStart2.save2() },
 
                 CommandRule(Predicate {
                     it?.startsWith("login ") ?: false
@@ -152,6 +159,7 @@ class SecretCommandService {
     private fun checkActivationRules(key: String): Boolean {
         for (rule in rules) {
             if (rule.condition.apply(key)) {
+                logger.debug("rule activated: ${rule.condition}")
                 rule.activator(key)
                 return true
             }
@@ -186,12 +194,12 @@ class SecretCommandService {
 
     companion object {
         private const val EA5T3R_M00: String = """
-     ____________________
-    / Congratulations!   \
-    |                    |
-    | You have found     |
-    \ an Easter Egg :)   /
-     --------------------
+     _____________________
+    / Congratulations!    \
+    |                     |
+    | You have now        |
+    \ Super Cow Powers :) /
+     ---------------------
        \   ^__^
         \  (oo)\_______
            (__)\       )\/\

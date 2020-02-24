@@ -14,6 +14,7 @@ import igrek.songbook.custom.SongImportFileChooser
 import igrek.songbook.dagger.DaggerIoc
 import igrek.songbook.info.logger.Logger
 import igrek.songbook.info.logger.LoggerFactory
+import igrek.songbook.settings.preferences.sync.QuickStart2
 import igrek.songbook.system.PermissionService
 import igrek.songbook.system.SystemKeyDispatcher
 import igrek.songbook.util.RetryDelayed
@@ -114,7 +115,15 @@ open class MainActivity : AppCompatActivity() {
             SongImportFileChooser.FILE_SELECT_CODE -> if (resultCode == Activity.RESULT_OK) {
                 songImportFileChooser.get().onFileSelect(data?.data)
             }
+            QuickStart2.REQUEST_CODE_SIGN_IN -> if (resultCode == Activity.RESULT_OK && data != null) {
+                QuickStart2.handleSignInResult(data, this)
+            }
+            QuickStart2.REQUEST_CODE_OPEN_DOCUMENT -> if (resultCode == Activity.RESULT_OK && data != null) {
+                val uri = data.data
+                uri?.let { QuickStart2.openFileFromFilePicker(it, this) }
+            }
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
+
 }
